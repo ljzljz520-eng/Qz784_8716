@@ -15,7 +15,7 @@ type TreeService struct {
 func NewTreeService(s *storage.Store) *TreeService {
 	return &TreeService{store: s, cache: map[string]*domain.TreeNode{}}
 }
-func (s *TreeService) Import(ctx context.Context, meeting string, people []domain.Participant) error {
+func (tree *TreeService) Import(ctx context.Context, meeting string, people []domain.Participant) error {
 	for _, p := range people {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -24,7 +24,7 @@ func (s *TreeService) Import(ctx context.Context, meeting string, people []domai
 		if err := domain.ValidateParticipant(p); err != nil {
 			return err
 		}
-		if err := s.store.PutParticipant(p); err != nil {
+		if err := tree.store.PutParticipant(p); err != nil {
 			return err
 		}
 	}
