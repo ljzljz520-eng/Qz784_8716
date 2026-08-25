@@ -7,9 +7,14 @@ import (
 	"sort"
 )
 
-type TreeService struct{ store *storage.Store }
+type TreeService struct {
+	store *storage.Store
+	cache map[string]*domain.TreeNode
+}
 
-func NewTreeService(s *storage.Store) *TreeService { return &TreeService{store: s} }
+func NewTreeService(s *storage.Store) *TreeService {
+	return &TreeService{store: s, cache: map[string]*domain.TreeNode{}}
+}
 func (s *TreeService) Import(ctx context.Context, meeting string, people []domain.Participant) error {
 	for _, p := range people {
 		if err := ctx.Err(); err != nil {
@@ -28,6 +33,9 @@ func (s *TreeService) Import(ctx context.Context, meeting string, people []domai
 func (s *TreeService) Build(ctx context.Context, meeting string) (*domain.TreeNode, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if cached := s.cache[meeting]; cached != nil {
+		return cached, nil
 	}
 	people, err := s.store.ListParticipants(meeting)
 	if err != nil {
@@ -48,6 +56,7 @@ func (s *TreeService) Build(ctx context.Context, meeting string) (*domain.TreeNo
 		}
 	}
 	sort.Slice(root.Children, func(i, j int) bool { return root.Children[i].Participant.Name < root.Children[j].Participant.Name })
+	s.cache[meeting] = root
 	return root, nil
 }
 func (s *TreeService) Flatten(root *domain.TreeNode) []domain.Participant {
